@@ -12,6 +12,7 @@ urlpatterns = [
     path('api-token-auth/', views.obtain_auth_token, name='token'),
     path('v1/registration/', CreateUserView.as_view({'post': 'create'}),
          name='registration'),
+    path('v1/drf-auth', include('rest_framework.urls', namespace='rest_framework')),
 
     path('v1/', include(users_router.urls)),
 ]

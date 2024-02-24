@@ -8,7 +8,7 @@ class UserRegSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'password',)
+        fields = ('username', 'password', 'email')
 
     def create(self, validated_data):
         """Сохранение пользователи в модели User."""
@@ -22,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email',
+        fields = ('id', 'username', 'email',
                   'is_staff', 'date_joined',)
         read_only_fields = ('date_joined', 'is_staff',)
 
@@ -31,7 +31,7 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email',
+        fields = ('id', 'username',  'email',
                   'is_staff', 'date_joined',)
         read_only_fields = ('date_joined',)
 
