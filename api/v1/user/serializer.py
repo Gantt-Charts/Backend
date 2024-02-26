@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from Gantt_Models.models import User, Profile
+from api.models import User, Profile
 
 
 class UserRegSerializer(serializers.ModelSerializer):
@@ -25,17 +25,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'email',
                   'is_staff', 'date_joined',)
         read_only_fields = ('date_joined', 'is_staff',)
-
-class UserAdminSerializer(serializers.ModelSerializer):
-    """Сериалайзер пользователей администратора."""
-
-    class Meta:
-        model = User
-        fields = ('id', 'username',  'email',
-                  'is_staff', 'date_joined',)
-        read_only_fields = ('date_joined',)
-
-
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)

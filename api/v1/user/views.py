@@ -4,14 +4,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from Gantt_Models.models import User
+from api.models import User
 from .permissions import ProjectPermission
-from .serializer import UserSerializer, UserRegSerializer, UserAdminSerializer, ProfileSerializer
+from .serializer import UserSerializer, UserRegSerializer, ProfileSerializer
 
 
 class CreateUserView(mixins.CreateModelMixin, GenericViewSet):
     """Регистрация пользователя."""
-    queryset = User.objects.all()
+    def get_queryset(self):
+        return User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = UserRegSerializer
 
@@ -23,8 +24,7 @@ class UserViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.user.is_staff:
-            return UserAdminSerializer
-        return UserSerializer
+            return UserSerializer
 
 
 class ProfileCreate(generics.GenericAPIView):
