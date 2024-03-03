@@ -1,19 +1,8 @@
-from django.urls import include, path
-from rest_framework.authtoken import views
-from rest_framework.routers import SimpleRouter
-from rest_framework.urlpatterns import format_suffix_patterns
-
-from api.v1.user.views import CreateUserView, UserViewSet
-
-users_router = SimpleRouter()
-users_router.register('user', UserViewSet, basename='user')
+from .views import RegisterViewSet, LoginView, LogoutViewSet
+from django.urls import path
 
 urlpatterns = [
-    path('api-token-auth/', views.obtain_auth_token, name='token'),
-    path('v1/registration/', CreateUserView.as_view({'post': 'create'}),
-         name='registration'),
-    path('v1/drf-auth', include('rest_framework.urls', namespace='rest_framework')),
-
-    path('v1/', include(users_router.urls)),
+    path('register/', RegisterViewSet.as_view({'post': 'create'}), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutViewSet.as_view({'post': 'create'}), name='logout'),
 ]
-urlpatterns = format_suffix_patterns(urlpatterns)

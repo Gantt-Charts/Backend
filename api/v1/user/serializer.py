@@ -1,39 +1,30 @@
 from rest_framework import serializers
-from api.models import User, Profile
+from django.contrib.auth import get_user_model, authenticate
+from rest_framework.authtoken.models import Token
 
 
-class UserRegSerializer(serializers.ModelSerializer):
-    """Сериалайзер регистрации."""
-    password = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ('username', 'password', 'email')
-
-    def create(self, validated_data):
-        """Сохранение пользователи в модели User."""
-        user = User.objects.create(username=validated_data['username'])
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериалайзер пользователей."""
-
     class Meta:
         model = User
-        fields = ('id', 'username', 'email',
-                  'is_staff', 'date_joined',)
-        read_only_fields = ('date_joined', 'is_staff',)
+        fields = ('username', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
 
-class ProfileSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
+class TokenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = [
-            'user'
-        ]
-    def create(self, validated_data):
-        profile = Profile.objects.create(user=self.context['request'].user,
-                                         **validated_data)
-        return profile
+        model = Token
+        fields = ('key',)
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        password = attrs.get('password')
+        user = authenticate(username=username, password=password)
+        if user is None:
+            raise serializers.ValidationError('Invalid credentials')
+        attrs['user'] = user
+        return attrs

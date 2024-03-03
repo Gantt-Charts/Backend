@@ -1,43 +1,55 @@
-from rest_framework import mixins, generics, status
-from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from django.contrib.auth import logout, authenticate
+from rest_framework import viewsets
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 
-from api.models import User
-from .permissions import ProjectPermission
-from .serializer import UserSerializer, UserRegSerializer, ProfileSerializer
-
-
-class CreateUserView(mixins.CreateModelMixin, GenericViewSet):
-    """Регистрация пользователя."""
-    def get_queryset(self):
-        return User.objects.all()
-    permission_classes = (AllowAny,)
-    serializer_class = UserRegSerializer
+from .serializer import UserSerializer, LoginSerializer, User
 
 
-class UserViewSet(ModelViewSet):
-    """Пользователи."""
+class RegisterViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = (ProjectPermission, IsAuthenticated,)
+    serializer_class = UserSerializer
+    permission_classes = (AllowAny,)
 
-    def get_serializer_class(self):
-        if self.request.user.is_staff:
-            return UserSerializer
-
-
-class ProfileCreate(generics.GenericAPIView):
-    """ Наполнение профиля юзера. """
-
-    serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def post(self, request, *args, **kwargs):
-        user = get_object_or_404(User, pk=request.user.pk)
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+        user.set_password(user.password)
+        user.save()
+        return user
+
+class LoginView(APIView):
+    def post(self, request, format=None):
+        print(request.data)
+        serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            user.profile = serializer.save()
-            return Response(ProfileSerializer(user.profile))
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            user = serializer.validated_data['username']
+            password = serializer.validated_data['password']
+            user = authenticate(username=user, password=password)
+            if user is not None:
+                if user.is_active:
+                    token, _ = Token.objects.get_or_create(user=user)
+                    return Response({'username': user.username, 'token': token.key}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'error': 'User is not active.'}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LogoutViewSet(viewsets.ViewSet):
+    permission_classes = (IsAuthenticated,)
+
+    def create(self, request, *args, **kwargs):
+        token = request.auth
+        token.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

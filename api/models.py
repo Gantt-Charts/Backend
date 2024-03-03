@@ -1,26 +1,22 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
 
 from django.contrib.auth import get_user_model
-
-
-User = get_user_model()
-
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, verbose_name="Пользователь", related_name="profile", on_delete=models.CASCADE)
+class User(AbstractUser):
+    username = models.CharField(max_length=100, unique=True)
+    password = models.CharField(max_length=100)
     class Meta:
-        verbose_name = "Профиль"
-        verbose_name_plural = "Профили"
-        db_table = "Users"
-    def __str__(self):
-        return self.user.username
+        swappable = 'AUTH_USER_MODEL'
 
 
 """Ниже идут модели для Диграммы Гантта"""
 class Project(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='projects',)
 
     def __str__(self):
         return self.name
@@ -28,12 +24,10 @@ class Project(models.Model):
 class Task(models.Model):
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=10)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start = models.DateField()
+    end = models.DateField()
     progress = models.IntegerField()
-    is_disabled = models.BooleanField(default=True)
-    duration = models.IntegerField(null=True)  # Duration in days
-    completion = models.FloatField(null=True)  # Completion percentage
+    isDisabled = models.BooleanField(default=True)
     project = models.ForeignKey(Project, related_name='tasks', on_delete=models.CASCADE)
 
     def __str__(self):
