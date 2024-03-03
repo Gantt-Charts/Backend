@@ -7,6 +7,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'description', 'created_by')
 
 class ProjectTaskSerializer(serializers.ModelSerializer):
+    dependencies = serializers.SerializerMethodField()
+
     class Meta:
         model = Task
-        fields = ('id', 'name', 'type', 'start', 'end', 'progress', 'isDisabled', 'project')
+        fields = ('id', 'name', 'type', 'start', 'end', 'progress', 'isDisabled', 'project', 'dependencies')
+
+    def get_dependencies(self, obj):
+        tasks = Task.objects.filter(project=obj.project).exclude(id=obj.id)
+        return [task.name for task in tasks]

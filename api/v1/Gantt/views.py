@@ -27,11 +27,13 @@ class ProjectTaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        print(self.request)
         username = self.kwargs.get('username')
         project_id = self.kwargs.get('project_id')
         return self.queryset.filter(project__created_by__username=username, project_id=project_id)
 
     def perform_create(self, serializer):
+        print(self.request)
         if self.request.user.username == self.kwargs.get('username'):
             project_id = self.kwargs.get('project_id')
             project = Project.objects.get(id=project_id, created_by=self.request.user)

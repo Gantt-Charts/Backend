@@ -30,5 +30,10 @@ class Task(models.Model):
     isDisabled = models.BooleanField(default=True)
     project = models.ForeignKey(Project, related_name='tasks', on_delete=models.CASCADE)
 
+    @property
+    def dependencies(self):
+        tasks = Task.objects.filter(project=self.project).exclude(id=self.id)
+        return [task.name for task in tasks]
+
     def __str__(self):
         return self.name
