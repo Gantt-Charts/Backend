@@ -19,7 +19,10 @@ class RegisterViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        # Автоматически войти в только что созданный аккаунт
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'username': user.username, 'token': token.key}, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         user = serializer.save()

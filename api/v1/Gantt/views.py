@@ -6,6 +6,10 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from api.models import Task, Project, User
 from api.v1.Gantt.serializer import ProjectSerializer, ProjectTaskSerializer
 
+class IsOwner(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.created_by == request.user
+
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
@@ -16,10 +20,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(created_by__username=username)
 
     def perform_create(self, serializer):
-        if self.request.user.username == self.kwargs.get('username'):
-            serializer.save(created_by=self.request.user)
-        else:
-            raise permissions.PermissionDenied('You do not have permission to perform this action.')
+        serializer.save(created_by=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            self.permission_classes = [permissions.IsAuthenticated, IsOwner]
+        elif self.action == 'list':
+            self.permission_classes = [permissions.IsAuthenticated]
+        return super().get_permissions()
 
 class ProjectTaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
@@ -27,7 +35,6 @@ class ProjectTaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        print(self.request)
         username = self.kwargs.get('username')
         project_id = self.kwargs.get('project_id')
         return self.queryset.filter(project__created_by__username=username, project_id=project_id)

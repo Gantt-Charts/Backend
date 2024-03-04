@@ -29,11 +29,7 @@ class Task(models.Model):
     progress = models.IntegerField()
     isDisabled = models.BooleanField(default=True)
     project = models.ForeignKey(Project, related_name='tasks', on_delete=models.CASCADE)
-
-    @property
-    def dependencies(self):
-        tasks = Task.objects.filter(project=self.project).exclude(id=self.id)
-        return [task.name for task in tasks]
+    dependencies = models.ManyToManyField('self', blank=True, related_name='dependent_tasks' ,symmetrical=False)
 
     def __str__(self):
         return self.name
