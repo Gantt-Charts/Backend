@@ -40,10 +40,20 @@ class ProjectTaskViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(project__created_by__username=username, project_id=project_id)
 
     def perform_create(self, serializer):
-        print(self.request)
         if self.request.user.username == self.kwargs.get('username'):
             project_id = self.kwargs.get('project_id')
             project = Project.objects.get(id=project_id, created_by=self.request.user)
             serializer.save(project=project)
+            instance = serializer.save(project=project)
+            return Response({'id': instance.id})
         else:
             raise permissions.PermissionDenied('You do not have permission to perform this action.')
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        return Response({'id': instance.id})
+
+    def perform_destroy(self, instance):
+        instance_id = instance.id
+        instance.delete()
+        return Response({'id': instance_id})
