@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 class User(AbstractUser):
     username = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=100)
+    # friendlist = models.ManyToManyField('self', blank=True)
     class Meta:
         swappable = 'AUTH_USER_MODEL'
 
@@ -33,3 +34,18 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+# class Labels(models.Model):
+#     name = models.CharField(max_length=100)
+#     color = models.CharField(max_length=10)
+#     project = models.ForeignKey(Task,related_name='labels', on_delete=models.CASCADE)
+#
+#     def __str__(self):
+#         return self.name
+
+# class Status(models.Model):
+#     name = models.CharField(max_length=100)
+#     color = models.CharField(max_length=10)
+#
+#     def __str__(self):
+#         return self.name
