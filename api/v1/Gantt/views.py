@@ -22,11 +22,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def perform_update(self, serializer):
+        if self.request.user != serializer.instance.created_by:
+            raise permissions.PermissionDenied('You do not have permission to perform this action.')
+        instance = serializer.save()
+        return Response({'id': instance.id})
+
+    def perform_destroy(self, instance):
+        if self.request.user != instance.created_by:
+            raise permissions.PermissionDenied('You do not have permission to perform this action.')
+        tasks = instance.tasks.all()
+        for task in tasks:
+            task.delete()
+        instance.delete()
+        return Response({'message': 'Project and tasks deleted successfully'})
+
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             self.permission_classes = [permissions.IsAuthenticated, IsOwner]
-        elif self.action == 'list':
-            self.permission_classes = [permissions.IsAuthenticated]
         return super().get_permissions()
 
 class ProjectTaskViewSet(viewsets.ModelViewSet):

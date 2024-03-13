@@ -33,7 +33,6 @@ class RegisterViewSet(viewsets.ModelViewSet):
 
 class LoginView(APIView):
     def post(self, request, format=None):
-        print(request.data)
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['username']
@@ -41,7 +40,10 @@ class LoginView(APIView):
             user = authenticate(username=user, password=password)
             if user is not None:
                 if user.is_active:
-                    token, _ = Token.objects.get_or_create(user=user)
+                    # Удаляем старые токены пользователя
+                    Token.objects.filter(user=user).delete()
+                    # Генерируем новый токен
+                    token = Token.objects.create(user=user)
                     return Response({'username': user.username, 'token': token.key}, status=status.HTTP_200_OK)
                 else:
                     return Response({'error': 'User is not active.'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -49,6 +51,18 @@ class LoginView(APIView):
                 return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TokenCheckView(APIView):
+    def get(self, request, token, format=None):
+        try:
+            token_instance = Token.objects.get(key=token)
+
+            if not token_instance.user.is_active:
+                return Response({'error': 'User is not active.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            return Response({'username': token_instance.user.username})
+        except Token.DoesNotExist:
+            return Response({'error': 'Invalid token.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutViewSet(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
